@@ -4,14 +4,12 @@ import numpy as np
 class NeuralNetwork:
 
     def __init__(self, layer_sizes):
-        self.num_layers = len(layer_sizes)
-
-        self.activations = np.asarray([np.zeros(size) for size in layer_sizes])
-
         weight_shapes = [(a, b) for a, b in zip(layer_sizes[1:], layer_sizes[:-1])]
         self.weights = [np.random.standard_normal(s) / np.sqrt(s[1]) for s in weight_shapes]
-
         self.biases = [np.zeros((s, 1)) for s in layer_sizes[1:]]
+
+        self.num_layers = len(layer_sizes)
+        self.activations = np.asarray([np.zeros(size) for size in layer_sizes])
 
     def feedforward(self, sample):
         """
@@ -49,7 +47,7 @@ class NeuralNetwork:
     def update_batch(self, batch, learning_rate):
         """
         Calculate direction of gradient given a batch,
-        and apply the change to the weigths and biases
+        and apply the change to the weights and biases
         """
         # these arrays hold the change in direction for each weight and bias
         bias_gradients = [np.zeros(b.shape) for b in self.biases]
@@ -57,7 +55,7 @@ class NeuralNetwork:
 
         for sample, label in batch:
             # calculate the direction of the gradient for a single sample
-            bias_deltas, weight_deltas = self.backprop(sample, label)
+            bias_deltas, weight_deltas = self.back_propagation(sample, label)
 
             # combine the result with results from previous samples
             bias_gradients = [b_gradient + b_delta for b_gradient, b_delta in zip(bias_gradients, bias_deltas)]
@@ -69,10 +67,10 @@ class NeuralNetwork:
         self.weights = [w - (learning_rate / len(batch)) * w_gradient for w, w_gradient in
                         zip(self.weights, weight_gradients)]
 
-    def backprop(self, sample, label):
+    def back_propagation(self, sample, label):
         """
         Feed a sample through the network and calculate the changes in weights and biases
-        in such a way that the cost is minimized
+        by propagating back through the network in such a way that the cost is minimized
         """
         bias_deltas = [np.zeros(b.shape) for b in self.biases]
         weight_deltas = [np.zeros(w.shape) for w in self.weights]
@@ -80,12 +78,12 @@ class NeuralNetwork:
         # calculate the activations for all neurons by feeding a sample through the network
         self.feedforward(sample)
 
+        # theory by 3Blue1Brown: https://youtu.be/tIeHLnjs5U8
+        L = -1
+
         # 'partial_deltas' is two (of three) parts of the 'chain rule'
         # - the change in cost given a change in a(L) (= cost_function'(a(L), y))
         # - the change in a(L) given a change in z(L) (= sigmoid'(z(L)))
-        # more: https://youtu.be/tIeHLnjs5U8
-
-        L = -1
         partial_deltas = self.cost_function_derivative(self.activations[L], label) * \
                          self.activation_function_derivative(self.activations[L])
 
@@ -115,12 +113,12 @@ class NeuralNetwork:
 
     def calculate_average_cost(self, samples, labels):
         predictions = self.feedforward(samples)
-        average_cost = sum([self.cost_function(p, l) for p, l in zip(predictions, labels)])/len(samples)
+        average_cost = sum([self.cost_function(p, l) for p, l in zip(predictions, labels)]) / len(samples)
         print("average cost: {0}".format(average_cost))
 
     def print_accuracy(self, samples, labels):
         predictions = [self.feedforward(sample) for sample in samples]
-        num_correct = sum([np.argmax(a) == np.argmax(b) for a, b in zip(predictions, labels)])
+        num_correct = sum([np.argmax(p) == np.argmax(l) for p, l in zip(predictions, labels)])
         print("{0}/{1} accuracy: {2}%".format(num_correct, len(samples), (num_correct / len(samples)) * 100))
 
     """
