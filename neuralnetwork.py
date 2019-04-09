@@ -92,19 +92,19 @@ class NeuralNetwork:
         # for biases: the change in z(L) given a change in b(L) = 1         [5:46 in the video]
         # for weights: the change in z(L) given a change in w(L) = a(L-1)   [5:11 in the video]
         bias_deltas[L] = partial_deltas  # * 1 (but this is redundant)
-        weight_deltas[L] = np.dot(partial_deltas, self.activations[L - 1].transpose())
+        weight_deltas[L] = np.dot(partial_deltas, self.activations[L - 1].T)
 
         # continue back propagation, stop at second to last layer, we don't want to adjust the input layer :-)
         while L > -self.num_layers + 1:
             # to update the partial_deltas for a previous activation layer we need to multiply again with a third part
             # for the previous activation: the change in z(L) given a change in a(L-1) = w(L)   [6:05 in the video]
-            previous_layer_deltas = np.dot(self.weights[L].transpose(), partial_deltas)
+            previous_layer_deltas = np.dot(self.weights[L].T, partial_deltas)
 
             # again calculate the two (of three) parts of the 'chain rule' for the biases and weights
             # and apply the third part separate
             partial_deltas = previous_layer_deltas * self.activation_function_derivative(self.activations[L - 1])
             bias_deltas[L - 1] = partial_deltas  # * 1 (but this is redundant)
-            weight_deltas[L - 1] = np.dot(partial_deltas, self.activations[L - 2].transpose())
+            weight_deltas[L - 1] = np.dot(partial_deltas, self.activations[L - 2].T)
 
             L -= 1
             # this loop can be slightly optimized, but it's done this way to stay in line with the theory
